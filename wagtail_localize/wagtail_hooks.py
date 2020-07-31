@@ -5,29 +5,40 @@ from django.contrib.auth.models import Permission
 from django.urls import reverse, path, include
 from django.utils.translation import gettext as _
 from django.templatetags.static import static
-from django.urls import path
+from django.urls import path, reverse
 from django.utils.html import format_html_join
+from django.utils.translation import ugettext_lazy as _
 from django.views.i18n import JavaScriptCatalog
 
 from wagtail.admin import widgets as wagtailadmin_widgets
+from wagtail.admin.menu import MenuItem
 from wagtail.core import hooks
 from wagtail.core.models import Locale, TranslatableMixin
 from wagtail.snippets.widgets import SnippetListingButton
 
 from .models import Translation
 from .views import submit_translations
+from .views.api import ListTranslationsView
 from .views.edit_translation import edit_translation, edit_string_translation
+from .views.reports import translations_report
+
 
 from wagtail.snippets.widgets import SnippetListingButton
 
 
 @hooks.register("register_admin_urls")
 def register_admin_urls():
+    api_urls = [
+        path('translations/', ListTranslationsView.as_view(), name='translations'),
+    ]
+
     urls = [
+        path('api/', include((api_urls, "api"), namespace="api")),
         path('jsi18n/', JavaScriptCatalog.as_view(packages=['wagtail_localize']), name='javascript_catalog'),
         path("submit/page/<int:page_id>/", submit_translations.SubmitPageTranslationView.as_view(), name="submit_page_translation"),
         path("submit/snippet/<slug:app_label>/<slug:model_name>/<str:pk>/", submit_translations.SubmitSnippetTranslationView.as_view(), name="submit_snippet_translation"),
         path("translate/<int:translation_id>/strings/<int:string_segment_id>/edit/", edit_string_translation, name="edit_string_translation"),
+        path('reports/translations/', translations_report, name='translations_report'),
     ]
 
     return [
@@ -106,3 +117,18 @@ def before_edit_snippet(request, instance):
 
         except Translation.DoesNotExist:
             pass
+
+
+class TranslationsMenuItem(MenuItem):
+    def is_shown(self, request):
+        return True
+
+
+@hooks.register("register_reports_menu_item")
+def register_menu_item():
+    return TranslationsMenuItem(
+        _("Translations"),
+        reverse("wagtail_localize:translations_report"),
+        classnames="icon icon-site",
+        order=500,
+    )
