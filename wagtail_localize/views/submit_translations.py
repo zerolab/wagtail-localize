@@ -102,7 +102,10 @@ class SubmitTranslationView(SingleObjectMixin, TemplateView):
         return str(self.object)
 
     def get_form(self):
-        return SubmitTranslationForm(self.object, self.request.POST or None)
+        if self.request.method == 'POST':
+            return SubmitTranslationForm(self.object, self.request.POST)
+        else:
+            return SubmitTranslationForm(self.object)
 
     def get_success_url(self):
         return get_valid_next_url_from_request(self.request)
