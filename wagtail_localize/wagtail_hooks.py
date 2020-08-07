@@ -7,7 +7,7 @@ from django.utils.translation import gettext as _
 
 from wagtail.admin import widgets as wagtailadmin_widgets
 from wagtail.core import hooks
-from wagtail.core.models import TranslatableMixin
+from wagtail.core.models import Locale, TranslatableMixin
 from wagtail.snippets.widgets import SnippetListingButton
 
 from .views import submit_translations
@@ -38,7 +38,7 @@ def register_submit_translation_permission():
 
 @hooks.register("register_page_listing_more_buttons")
 def page_listing_more_buttons(page, page_perms, is_parent=False, next_url=None):
-    if page_perms.user.has_perms(['wagtail_localize.submit_translation']):
+    if page_perms.user.has_perms(['wagtail_localize.submit_translation']) and Locale.objects.exclude(id__in=page.get_translations(inclusive=True).values_list('locale_id', flat=True)).exists():
         url = reverse("wagtail_localize:submit_page_translation", args=[page.id])
         if next_url is not None:
             url += '?' + urlencode({'next': next_url})
@@ -50,7 +50,7 @@ def page_listing_more_buttons(page, page_perms, is_parent=False, next_url=None):
 def register_snippet_listing_buttons(snippet, user, next_url=None):
     model = type(snippet)
 
-    if issubclass(model, TranslatableMixin) and user.has_perms(['wagtail_localize.submit_translation']):
+    if issubclass(model, TranslatableMixin) and user.has_perms(['wagtail_localize.submit_translation']) and Locale.objects.exclude(id__in=snippet.get_translations(inclusive=True).values_list('locale_id', flat=True)).exists():
         url = reverse('wagtail_localize:submit_snippet_translation', args=[model._meta.app_label, model._meta.model_name, quote(snippet.pk)])
         if next_url is not None:
             url += '?' + urlencode({'next': next_url})
