@@ -148,10 +148,10 @@ def get_segment_location_info(source_instance, tab_helper, segment):
 
         return {
             'tab': tab,
-            'field': capfirst(str(block_type.label)),
+            'field': capfirst(force_text(block_type.label)),
             'blockId': block_id,
             'fieldHelpText': '',
-            'subField': block_field,
+            'subField': force_text(block_field) if block_field else None,
         }
 
     elif (
@@ -296,7 +296,7 @@ def edit_translation(request, translation, instance):
         # These props are passed directly to the TranslationEditor react component
         'props': json.dumps({
             'object': {
-                'title': str(instance),
+                'title': force_text(instance),
                 'isLive': is_live,
                 'isLocked': is_locked,
                 'lastPublishedDate': last_published_at.strftime('%-d %B %Y') if last_published_at is not None else None,
@@ -315,7 +315,7 @@ def edit_translation(request, translation, instance):
             },
             'translations': [
                 {
-                    'title': str(translated_instance),
+                    'title': force_text(translated_instance),
                     'locale': {
                         'code': translated_instance.locale.language_code,
                         'displayName': translated_instance.locale.get_display_name(),
